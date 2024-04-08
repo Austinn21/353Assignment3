@@ -6,8 +6,9 @@
       (let loop ((accounts '()))
         (let ((line (read-line)))
           (cond
-            ((eof-object? line) (reverse accounts))
+            ((eof-object? line) (reverse accounts)) ;; Return the parsed accounts in reverse order
             (else
+             ;; Parse account number, name, and balance from the line
              (let* ((match-result (regexp-match #rx"^\\s*(\\d+)\\s+\"([^\"]+)\"\\s+(\\d+(\\.\\d+)?)\\s*$" line))
                     (account-number (if match-result (list-ref match-result 1) ""))
                     (account-name (if match-result (list-ref match-result 2) ""))
@@ -18,21 +19,20 @@
   (with-input-from-file filename
     (lambda ()
       (let loop ((transactions '())
-                 (counter 10001))
+                 (counter 10001)) ;; Initialize a counter for transaction IDs
         (let ((line (read-line)))
           (cond
-            ((eof-object? line) (reverse transactions))
+            ((eof-object? line) (reverse transactions)) ;; Return the parsed transactions in reverse order
             (else
-             (let* ((parts (regexp-split #rx"\t+" line)) ; Split based on tabs
+             ;; Split the line into parts based on tabs
+             (let* ((parts (regexp-split #rx"\t+" line))
                     (transaction-type (car parts))
                     (account-number (cadr parts))
                     (transaction-id (caddr parts))
                     (merchant (cadddr parts))
-                    (amount (string->number (cadr (reverse parts))))) ; Get the last part as amount
+                    (amount (string->number (cadr (reverse parts))))) ;; Get the last part as amount
                (loop (cons (list counter transaction-type account-number transaction-id merchant amount) transactions)
-                      (add1 counter))))))))))
-  
-
+                      (add1 counter)))))))))
 
 (define (process-transactions accounts transactions)
   (define (get-account name)
@@ -85,17 +85,19 @@
            (total-purchases (format-amounts purchase-amounts))
            (total-payments (format-amounts payment-amounts))
            (ending-balance (+ starting-balance total-purchases (- total-payments))))
+      ;; Return formatted account statement
       (cons (list account-number starting-balance)
             (cons processed-transactions
                   (list (list "Total purchases:" (format "~a" total-purchases))
                         (list "Total payments:" (format "~a" total-payments))
                         (list "Ending balance:" (format "~a" ending-balance)))))))
 
-  ;; Fix: Sort accounts by the first element of each sublist (assumed to be the account number)
   (let* ((sorted-accounts (sort accounts (lambda (a b) (string<? (car a) (car b)))))
          (processed-accounts (map process-account sorted-accounts)))
+    ;; Write account statements to file
     (with-output-to-file "STATEMENTS.txt"
       (lambda ()
+        ;; Loop through processed accounts and write statements to file
         (for-each (lambda (account)
                     (for-each display (car account))
                     (newline)
@@ -108,12 +110,7 @@
                     (newline))
                   processed-accounts)))))
 
-
 ;; Usage
 (define accounts (parse-accounts "ACCOUNTS.txt"))
 (define transactions (parse-transactions "TRANSACTIONS.txt"))
 (process-transactions accounts transactions)
-
-
-
-
